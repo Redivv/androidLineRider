@@ -1,84 +1,74 @@
 package com.example.splinerider
 
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import kotlin.random.Random
 import android.os.VibrationEffect
 
 import android.os.Build
 
-import androidx.core.content.ContextCompat.getSystemService
-
 import android.os.Vibrator
-import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AlertDialog
 
 
 class NaszWidok(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private var kolor = Color.rgb(175, 0, 181)
-    private var zielony = Color.GREEN
-    private var czarny = Color.BLACK
     private var isMultiTouch: Boolean = false
     private var isGameRestarted: Boolean = false
     private var lineEndX: Float = 100f
     private var lineEndY: Float = 100f
-    private var r: Int = 0
-    private var g: Int = 0
-    private var b: Int = 0
-    private lateinit var rand: Random
+    private lateinit var obstaclesArray: Array<RectF>
 
 
-    private val gracz = RectF(lineEndX, lineEndY, 40f, 40f)
-    private val przeszkadzajka = RectF(255f, 400f, 400f, 200f)
-    private val przeszkadzajka2 = RectF(200f, 1500f, 655f, 822f)
-    private val wygrywajka = RectF(800f, 1500f, 900f, 1600f)
+    private val playerOval = RectF(lineEndX, lineEndY, 40f, 40f)
+    private val goalRectangle = RectF(800f, 1300f, 900f, 1400f)
 
-
-    fun SetRand(canvas: Canvas) {
-        r = rand.nextInt(0, 255)
-        g = rand.nextInt(0, 255)
-        b = rand.nextInt(0, 255)
-    }
 
     private val playerCenterOffset = 30
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        obstaclesArray = GameData.gameLevels[0]
+        drawPlayer(canvas)
+        drawObstacles(canvas)
+        drawGoal(canvas)
+    }
 
-        rand = Random(System.currentTimeMillis())
+    private fun drawGoal(canvas: Canvas) {
+        paint.color = Color.YELLOW
+        canvas.drawRect(goalRectangle, paint)
+    }
 
-        // for(i in 0..100) {
-        SetRand(canvas)
+    private fun drawObstacles(canvas: Canvas) {
+        paint.color = Color.RED
+        for (i in obstaclesArray.indices) {
+            canvas.drawRect(obstaclesArray[i], paint)
+        }
+    }
 
-        gracz.left = lineEndX - playerCenterOffset
-        gracz.top = lineEndY - playerCenterOffset
+    private fun drawPlayer(canvas: Canvas) {
+        playerOval.left = lineEndX - playerCenterOffset
+        playerOval.top = lineEndY - playerCenterOffset
+        playerOval.right = lineEndX + playerCenterOffset
+        playerOval.bottom = lineEndY + playerCenterOffset
 
-        gracz.right = lineEndX + playerCenterOffset
-        gracz.bottom = lineEndY + playerCenterOffset
-
-        paint.color = Color.rgb(r, g, b)
-        paint.style = Paint.Style.FILL
-        canvas.drawOval(gracz, paint)
-        canvas.drawRect(przeszkadzajka, paint)
-        canvas.drawRect(przeszkadzajka2, paint)
-        canvas.drawRect(wygrywajka, paint)
-
-        paint.color = czarny
-        paint.strokeWidth = 10f
+        paint.color = Color.BLACK
+        paint.strokeWidth = 20f
         paint.style = Paint.Style.STROKE
-        canvas.drawOval(gracz, paint)
+        canvas.drawOval(playerOval, paint)
+
+        paint.style = Paint.Style.FILL
+        paint.color = Color.GREEN
+        canvas.drawOval(playerOval, paint)
     }
 
     override fun onTouchEvent(event: MotionEvent):
             Boolean {
-        var action = event.action and MotionEvent.ACTION_MASK
-        if (action === MotionEvent.ACTION_DOWN || action === MotionEvent.ACTION_POINTER_DOWN) {
+        val action = event.action and MotionEvent.ACTION_MASK
+        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
             val newLineEndX = event.getX(event.getPointerId(event.pointerCount - 1))
             val newLineEndY = event.getY(event.getPointerId(event.pointerCount - 1))
             isMultiTouch = event.pointerCount > 1
@@ -89,35 +79,33 @@ class NaszWidok(context: Context, attrs: AttributeSet) : View(context, attrs) {
                 newLineStartingX = event.getX(event.getPointerId(event.pointerCount - 2))
                 newLineStartingY = event.getY(event.getPointerId(event.pointerCount - 2))
             }
-            if (!isLineCollidingWithRectangle(
-                    newLineStartingX - playerCenterOffset,
-                    newLineStartingY - playerCenterOffset,
-                    newLineEndX,
-                    newLineEndY,
-                    przeszkadzajka.left,
-                    przeszkadzajka.top,
-                    przeszkadzajka.width(),
-                    przeszkadzajka.height()
-                ) && !isLineCollidingWithRectangle(
-                    newLineStartingX - playerCenterOffset,
-                    newLineStartingY - playerCenterOffset,
-                    newLineEndX,
-                    newLineEndY,
-                    przeszkadzajka2.left,
-                    przeszkadzajka2.top,
-                    przeszkadzajka2.width(),
-                    przeszkadzajka2.height()
-                )
-            ) {
+            var isColliding = false
+            for (i in obstaclesArray.indices) {
                 if (isLineCollidingWithRectangle(
                         newLineStartingX - playerCenterOffset,
                         newLineStartingY - playerCenterOffset,
                         newLineEndX,
                         newLineEndY,
-                        wygrywajka.left,
-                        wygrywajka.top,
-                        wygrywajka.width(),
-                        wygrywajka.height()
+                        obstaclesArray[i].left,
+                        obstaclesArray[i].top,
+                        obstaclesArray[i].width(),
+                        obstaclesArray[i].height()
+                    )
+                ) {
+                    isColliding = true
+                    break
+                }
+            }
+            if (!isColliding) {
+                if (isLineCollidingWithRectangle(
+                        newLineStartingX - playerCenterOffset,
+                        newLineStartingY - playerCenterOffset,
+                        newLineEndX,
+                        newLineEndY,
+                        goalRectangle.left,
+                        goalRectangle.top,
+                        goalRectangle.width(),
+                        goalRectangle.height()
                     )
                 ) {
                     winGame()
@@ -131,7 +119,7 @@ class NaszWidok(context: Context, attrs: AttributeSet) : View(context, attrs) {
             }
             invalidate()
             return true
-        } else if (action === MotionEvent.ACTION_MOVE) {
+        } else if (action == MotionEvent.ACTION_MOVE) {
             return true
         }
         if (!isGameRestarted) {
@@ -146,6 +134,7 @@ class NaszWidok(context: Context, attrs: AttributeSet) : View(context, attrs) {
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
+        showInfoDialog("Skucha", "Jeszcze raz")
     }
 
     private fun winGame() {
@@ -153,19 +142,20 @@ class NaszWidok(context: Context, attrs: AttributeSet) : View(context, attrs) {
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
+        showInfoDialog("Wygrałeś", "Brawo")
     }
 
-    private fun vibrateDevice(miliseconds: Long = 200) {
+    private fun vibrateDevice(milliseconds: Long = 200) {
         val vibrator = context?.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= 26) {
             vibrator.vibrate(
                 VibrationEffect.createOneShot(
-                    miliseconds,
+                    milliseconds,
                     VibrationEffect.DEFAULT_AMPLITUDE
                 )
             )
         } else {
-            vibrator.vibrate(miliseconds)
+            vibrator.vibrate(milliseconds)
         }
     }
 
@@ -205,5 +195,17 @@ class NaszWidok(context: Context, attrs: AttributeSet) : View(context, attrs) {
             return true
         }
         return false
+    }
+
+    private fun showInfoDialog(alertTitle: String, alertMessage: String) {
+        var builder = AlertDialog.Builder(context)
+        builder.setTitle(alertTitle)
+        builder.setMessage(alertMessage)
+        builder.setCancelable(true)
+        builder.setNegativeButton("OK") { dialog, id ->
+            dialog.dismiss()
+        }
+        val alert = builder.create()
+        alert.show()
     }
 }
