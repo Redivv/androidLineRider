@@ -13,28 +13,35 @@ import android.os.Vibrator
 import androidx.appcompat.app.AlertDialog
 
 
-class NaszWidok(context: Context, attrs: AttributeSet) : View(context, attrs) {
+class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var isMultiTouch: Boolean = false
     private var isGameRestarted: Boolean = false
+    private var gameLevel = 0
     private var lineEndX: Float = 100f
     private var lineEndY: Float = 100f
     private lateinit var obstaclesArray: Array<RectF>
-
-
     private val playerOval = RectF(lineEndX, lineEndY, 40f, 40f)
     private val goalRectangle = RectF(800f, 1300f, 900f, 1400f)
-
-
     private val playerCenterOffset = 30
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        showInfoDialog("kupa", "dupa")
+    }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        obstaclesArray = GameData.gameLevels[0]
+        obstaclesArray = GameData.gameLevels[gameLevel]
         drawPlayer(canvas)
         drawObstacles(canvas)
         drawGoal(canvas)
+    }
+
+    fun setGameLevel(newGameLevel: Int) {
+        gameLevel = newGameLevel
+        invalidate()
     }
 
     private fun drawGoal(canvas: Canvas) {
