@@ -1,6 +1,7 @@
 package com.example.splinerider
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -22,26 +23,22 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var lineEndX: Float = 100f
     private var lineEndY: Float = 100f
     private lateinit var obstaclesArray: Array<RectF>
+    private lateinit var sharedPref: SharedPreferences
     private val playerOval = RectF(lineEndX, lineEndY, 40f, 40f)
     private val goalRectangle = RectF(800f, 1300f, 900f, 1400f)
     private val playerCenterOffset = 30
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        showInfoDialog("kupa", "dupa")
-    }
-
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        gameLevel = sharedPref.getInt("savedLevel", 0)
         obstaclesArray = GameData.gameLevels[gameLevel]
         drawPlayer(canvas)
         drawObstacles(canvas)
         drawGoal(canvas)
     }
 
-    fun setGameLevel(newGameLevel: Int) {
-        gameLevel = newGameLevel
-        invalidate()
+    fun setSharedPreferences(mainSharedPref: SharedPreferences){
+        sharedPref = mainSharedPref
     }
 
     private fun drawGoal(canvas: Canvas) {
@@ -149,6 +146,8 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
+        gameLevel++
+        sharedPref.edit().putInt("savedLevel", gameLevel).apply()
         showInfoDialog("Wygrałeś", "Brawo")
     }
 

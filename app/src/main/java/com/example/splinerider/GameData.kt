@@ -5,6 +5,7 @@ import android.provider.BaseColumns
 
 object GameData {
     val gameLevels = arrayOf(
+        emptyArray(),
         arrayOf(
             RectF(255f, 400f, 400f, 200f),
         ),
