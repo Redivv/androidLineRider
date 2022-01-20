@@ -37,7 +37,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         drawGoal(canvas)
     }
 
-    fun setSharedPreferences(mainSharedPref: SharedPreferences){
+    fun setSharedPreferences(mainSharedPref: SharedPreferences) {
         sharedPref = mainSharedPref
     }
 
@@ -146,9 +146,14 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
-        gameLevel++
-        sharedPref.edit().putInt("savedLevel", gameLevel).apply()
-        showInfoDialog("Wygrałeś", "Brawo")
+        if (gameLevel == GameData.gameLevels.size - 1) {
+            sharedPref.edit().putInt("savedLevel", 0).apply()
+            showInfoDialog("Koniec gry", "Spróbuj jeszcze raz")
+        } else {
+            gameLevel++
+            sharedPref.edit().putInt("savedLevel", gameLevel).apply()
+            showInfoDialog("Wygrałeś", "Brawo")
+        }
     }
 
     private fun vibrateDevice(milliseconds: Long = 200) {
