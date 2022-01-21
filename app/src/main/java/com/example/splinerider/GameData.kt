@@ -4,6 +4,8 @@ import android.graphics.RectF
 import android.provider.BaseColumns
 
 object GameData {
+    const val playerCenterOffset = 30f
+    val goalRectangle = RectF(800f, 1300f, 900f, 1400f)
     val gameObstacles = arrayOf(
         RectF(0f, 0f, 0f, 0f),
         RectF(255f, 400f, 400f, 200f),

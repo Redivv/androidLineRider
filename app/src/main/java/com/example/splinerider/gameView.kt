@@ -16,18 +16,20 @@ import androidx.appcompat.app.AlertDialog
 
 class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var isMultiTouch: Boolean = false
     private var isGameRestarted: Boolean = false
+
     private var gameLevel = 1
+
     private var lineEndX: Float = 100f
     private var lineEndY: Float = 100f
-    private var obstaclesArray = GameData.gameObstacles
-    private lateinit var sharedPref: SharedPreferences
     private val playerOval = RectF(lineEndX, lineEndY, 40f, 40f)
-    private var playerFingers = mutableListOf(arrayOf(100f, 100f))
-    private val goalRectangle = RectF(800f, 1300f, 900f, 1400f)
-    private val playerCenterOffset = 30
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    private var obstaclesArray = GameData.gameObstacles
+    private var playerSteps = mutableListOf(arrayOf(100f, 100f))
+
+    private lateinit var sharedPref: SharedPreferences
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -51,7 +53,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
     private fun drawGoal(canvas: Canvas) {
         paint.color = Color.CYAN
-        canvas.drawRect(goalRectangle, paint)
+        canvas.drawRect(GameData.goalRectangle, paint)
     }
 
     private fun drawObstacles(canvas: Canvas) {
@@ -62,20 +64,20 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     }
 
     private fun drawPlayer(canvas: Canvas) {
-        playerOval.left = lineEndX - playerCenterOffset
-        playerOval.top = lineEndY - playerCenterOffset
-        playerOval.right = lineEndX + playerCenterOffset
-        playerOval.bottom = lineEndY + playerCenterOffset
+        playerOval.left = lineEndX - GameData.playerCenterOffset
+        playerOval.top = lineEndY - GameData.playerCenterOffset
+        playerOval.right = lineEndX + GameData.playerCenterOffset
+        playerOval.bottom = lineEndY + GameData.playerCenterOffset
 
         paint.color = Color.MAGENTA
         paint.strokeWidth = 5f
         paint.style = Paint.Style.STROKE
-        for (i in 1 until playerFingers.size) {
+        for (i in 1 until playerSteps.size) {
             canvas.drawLine(
-                playerFingers[i-1][0],
-                playerFingers[i-1][1],
-                playerFingers[i][0],
-                playerFingers[i][1],
+                playerSteps[i-1][0],
+                playerSteps[i-1][1],
+                playerSteps[i][0],
+                playerSteps[i][1],
                 paint
             )
         }
@@ -96,17 +98,17 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             val newLineEndY = event.getY(event.getPointerId(event.pointerCount - 1))
             isMultiTouch = event.pointerCount > 1
 
-            var newLineStartingX = playerFingers[0][0]
-            var newLineStartingY = playerFingers[0][1]
+            var newLineStartingX = playerSteps[0][0]
+            var newLineStartingY = playerSteps[0][1]
             if (isMultiTouch) {
-                newLineStartingX = playerFingers[event.pointerCount - 1][0]
-                newLineStartingY = playerFingers[event.pointerCount - 1][1]
+                newLineStartingX = playerSteps[event.pointerCount - 1][0]
+                newLineStartingY = playerSteps[event.pointerCount - 1][1]
             }
             var isColliding = false
             for (i in 1 until gameLevel) {
                 if (isLineCollidingWithRectangle(
-                        newLineStartingX - playerCenterOffset,
-                        newLineStartingY - playerCenterOffset,
+                        newLineStartingX - GameData.playerCenterOffset,
+                        newLineStartingY - GameData.playerCenterOffset,
                         newLineEndX,
                         newLineEndY,
                         obstaclesArray[i].left,
@@ -121,14 +123,14 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             }
             if (!isColliding) {
                 if (isLineCollidingWithRectangle(
-                        newLineStartingX - playerCenterOffset,
-                        newLineStartingY - playerCenterOffset,
+                        newLineStartingX - GameData.playerCenterOffset,
+                        newLineStartingY - GameData.playerCenterOffset,
                         newLineEndX,
                         newLineEndY,
-                        goalRectangle.left,
-                        goalRectangle.top,
-                        goalRectangle.width(),
-                        goalRectangle.height()
+                        GameData.goalRectangle.left,
+                        GameData.goalRectangle.top,
+                        GameData.goalRectangle.width(),
+                        GameData.goalRectangle.height()
                     )
                 ) {
                     winGame()
@@ -137,7 +139,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
                     lineEndY = newLineEndY
                     isGameRestarted = false
                     vibrateDevice(50)
-                    playerFingers.add(arrayOf(newLineEndX, newLineEndY))
+                    playerSteps.add(arrayOf(newLineEndX, newLineEndY))
                 }
             } else {
                 restartGame()
@@ -159,7 +161,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
-        playerFingers = mutableListOf(arrayOf(100f, 100f))
+        playerSteps = mutableListOf(arrayOf(100f, 100f))
         showInfoDialog("Kolizja", "Spróbuj jeszcze raz")
     }
 
@@ -168,7 +170,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
-        playerFingers = mutableListOf(arrayOf(100f, 100f))
+        playerSteps = mutableListOf(arrayOf(100f, 100f))
         if (gameLevel == GameData.gameObstacles.size) {
             sharedPref.edit().putInt("savedLevel", 1).apply()
             showInfoDialog("Koniec gry", "Skończyłeś wszystkie poziomy\nGratulacje!")
