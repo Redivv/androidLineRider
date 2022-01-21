@@ -25,6 +25,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var obstaclesArray = GameData.gameObstacles
     private lateinit var sharedPref: SharedPreferences
     private val playerOval = RectF(lineEndX, lineEndY, 40f, 40f)
+    private var playerFingers = mutableListOf(arrayOf(100f, 100f))
     private val goalRectangle = RectF(800f, 1300f, 900f, 1400f)
     private val playerCenterOffset = 30
 
@@ -32,7 +33,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         super.onAttachedToWindow()
         showInfoDialog(
             "Witaj w Spline Rider",
-            "Ułóż z dotyków palców krzywą która poprowadzi kółko do kwadrata.\nNie odrywaj palców od ekranu i uważaj na czerwone przeszkody"
+            "Ułóż z dotyków palców krzywą która poprowadzi kółko do kwadrata.\nNie odrywaj palców od ekranu (możesz je przesunąć) i uważaj na czerwone przeszkody"
         )
     }
 
@@ -66,9 +67,20 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         playerOval.right = lineEndX + playerCenterOffset
         playerOval.bottom = lineEndY + playerCenterOffset
 
+        paint.color = Color.MAGENTA
+        paint.strokeWidth = 5f
+        paint.style = Paint.Style.STROKE
+        for (i in 1 until playerFingers.size) {
+            canvas.drawLine(
+                playerFingers[i-1][0],
+                playerFingers[i-1][1],
+                playerFingers[i][0],
+                playerFingers[i][1],
+                paint
+            )
+        }
         paint.color = Color.BLACK
         paint.strokeWidth = 20f
-        paint.style = Paint.Style.STROKE
         canvas.drawOval(playerOval, paint)
 
         paint.style = Paint.Style.FILL
@@ -84,11 +96,11 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             val newLineEndY = event.getY(event.getPointerId(event.pointerCount - 1))
             isMultiTouch = event.pointerCount > 1
 
-            var newLineStartingX = 0.0f
-            var newLineStartingY = 0.0f
+            var newLineStartingX = playerFingers[0][0]
+            var newLineStartingY = playerFingers[0][1]
             if (isMultiTouch) {
-                newLineStartingX = event.getX(event.getPointerId(event.pointerCount - 2))
-                newLineStartingY = event.getY(event.getPointerId(event.pointerCount - 2))
+                newLineStartingX = playerFingers[event.pointerCount - 1][0]
+                newLineStartingY = playerFingers[event.pointerCount - 1][1]
             }
             var isColliding = false
             for (i in 1 until gameLevel) {
@@ -125,6 +137,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
                     lineEndY = newLineEndY
                     isGameRestarted = false
                     vibrateDevice(50)
+                    playerFingers.add(arrayOf(newLineEndX, newLineEndY))
                 }
             } else {
                 restartGame()
@@ -146,6 +159,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
+        playerFingers = mutableListOf(arrayOf(100f, 100f))
         showInfoDialog("Kolizja", "Spróbuj jeszcze raz")
     }
 
@@ -154,6 +168,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
+        playerFingers = mutableListOf(arrayOf(100f, 100f))
         if (gameLevel == GameData.gameObstacles.size) {
             sharedPref.edit().putInt("savedLevel", 1).apply()
             showInfoDialog("Koniec gry", "Skończyłeś wszystkie poziomy\nGratulacje!")
