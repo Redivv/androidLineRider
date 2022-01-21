@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun clearSave(view: View? = null) {
-        sharedPref.edit().putInt("savedLevel", 0).apply()
+        sharedPref.edit().putInt("savedLevel", 1).apply()
         findViewById<GameView>(R.id.gameView).invalidate()
     }
 

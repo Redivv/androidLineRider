@@ -19,19 +19,26 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var isMultiTouch: Boolean = false
     private var isGameRestarted: Boolean = false
-    private var gameLevel = 0
+    private var gameLevel = 1
     private var lineEndX: Float = 100f
     private var lineEndY: Float = 100f
-    private lateinit var obstaclesArray: Array<RectF>
+    private var obstaclesArray = GameData.gameObstacles
     private lateinit var sharedPref: SharedPreferences
     private val playerOval = RectF(lineEndX, lineEndY, 40f, 40f)
     private val goalRectangle = RectF(800f, 1300f, 900f, 1400f)
     private val playerCenterOffset = 30
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        showInfoDialog(
+            "Witaj w Spline Rider",
+            "Ułóż z dotyków palców krzywą która poprowadzi zielone kółko do żółtego kwadrata.\nNie odrywaj palców od ekranu i uważaj na czerwone przeszkody"
+        )
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         gameLevel = sharedPref.getInt("savedLevel", 0)
-        obstaclesArray = GameData.gameLevels[gameLevel]
         drawPlayer(canvas)
         drawObstacles(canvas)
         drawGoal(canvas)
@@ -48,7 +55,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
     private fun drawObstacles(canvas: Canvas) {
         paint.color = Color.RED
-        for (i in obstaclesArray.indices) {
+        for (i in 1 until gameLevel) {
             canvas.drawRect(obstaclesArray[i], paint)
         }
     }
@@ -84,7 +91,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
                 newLineStartingY = event.getY(event.getPointerId(event.pointerCount - 2))
             }
             var isColliding = false
-            for (i in obstaclesArray.indices) {
+            for (i in 1 until gameLevel) {
                 if (isLineCollidingWithRectangle(
                         newLineStartingX - playerCenterOffset,
                         newLineStartingY - playerCenterOffset,
@@ -117,6 +124,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
                     lineEndX = newLineEndX
                     lineEndY = newLineEndY
                     isGameRestarted = false
+                    vibrateDevice(50)
                 }
             } else {
                 restartGame()
@@ -134,29 +142,29 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     }
 
     private fun restartGame() {
-        vibrateDevice()
+        vibrateDevice(300)
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
-        showInfoDialog("Skucha", "Jeszcze raz")
+        showInfoDialog("Kolizja", "Spróbuj jeszcze raz")
     }
 
     private fun winGame() {
-        vibrateDevice(800)
+        vibrateDevice(1000)
         lineEndX = 100f
         lineEndY = 100f
         isGameRestarted = true
-        if (gameLevel == GameData.gameLevels.size - 1) {
-            sharedPref.edit().putInt("savedLevel", 0).apply()
-            showInfoDialog("Koniec gry", "Spróbuj jeszcze raz")
+        if (gameLevel == GameData.gameObstacles.size) {
+            sharedPref.edit().putInt("savedLevel", 1).apply()
+            showInfoDialog("Koniec gry", "Skończyłeś wszystkie poziomy\nGratulacje!")
         } else {
             gameLevel++
             sharedPref.edit().putInt("savedLevel", gameLevel).apply()
-            showInfoDialog("Wygrałeś", "Brawo")
+            showInfoDialog("Poziom ukończony", "Teraz zaczynasz etap nr " + gameLevel)
         }
     }
 
-    private fun vibrateDevice(milliseconds: Long = 200) {
+    private fun vibrateDevice(milliseconds: Long) {
         val vibrator = context?.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= 26) {
             vibrator.vibrate(
