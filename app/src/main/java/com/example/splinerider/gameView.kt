@@ -32,7 +32,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         super.onAttachedToWindow()
         showInfoDialog(
             "Witaj w Spline Rider",
-            "Ułóż z dotyków palców krzywą która poprowadzi zielone kółko do żółtego kwadrata.\nNie odrywaj palców od ekranu i uważaj na czerwone przeszkody"
+            "Ułóż z dotyków palców krzywą która poprowadzi kółko do kwadrata.\nNie odrywaj palców od ekranu i uważaj na czerwone przeszkody"
         )
     }
 
@@ -49,7 +49,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     }
 
     private fun drawGoal(canvas: Canvas) {
-        paint.color = Color.YELLOW
+        paint.color = Color.CYAN
         canvas.drawRect(goalRectangle, paint)
     }
 
@@ -72,7 +72,7 @@ class GameView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         canvas.drawOval(playerOval, paint)
 
         paint.style = Paint.Style.FILL
-        paint.color = Color.GREEN
+        paint.color = Color.MAGENTA
         canvas.drawOval(playerOval, paint)
     }
 
